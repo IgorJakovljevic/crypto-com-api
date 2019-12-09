@@ -1,6 +1,6 @@
 from distutils.core import setup
 
-with open("README.md", "r") as fh:
+with open("README.md", "r", encoding='utf-8') as fh:
     long_description = fh.read()
 
 setup(
@@ -9,8 +9,8 @@ setup(
   version = '0.1',      # Start with a small number and increase it with every change you make
   license='MIT',        # Chose a license from here: https://help.github.com/articles/licensing-a-repository
   description = 'Python Wrapper for Crypto.com API',   # Give a short description about your library
-  long_description=long_description,
-  long_description_content_type="text/markdown",
+  # long_description=long_description,
+  # long_description_content_type="text/markdown",
   author = 'Igor Jakovljevic',                   # Type in your name
   author_email = 'igor.jakovljevic@outlook.com',      # Type in your E-Mail
   url = 'https://github.com/IgorJakovljevic/crypto-com-api',   # Provide either the link to your github or to your website

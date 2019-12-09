@@ -2,12 +2,13 @@
 # coding: utf8
 
 import requests
-
+import hashlib
+import datetime
 
 class CryptoComApi():
-    def __init__(self, token="", secret_key=""):
+    def __init__(self, api_key="", secret_key=""):
         self.url = "https://api.crypto.com"
-        self.token = token
+        self.api_key = api_key
         self.secret_key = secret_key
 
     def get_symbols(self):
@@ -101,3 +102,19 @@ class CryptoComApi():
             ret["volume"] = val[5]
             return ret
         return [parse_obj(x) for x in data]
+
+   
+    def sign(self, api_key, secret_key, param_string):
+        signature = f"api_key{api_key}{param_string}{secret_key}"  
+        return hashlib.sha256(signature.encode('ASCII')).hexdigest()
+
+    def get_account(self):        
+        data = dict()
+        data['api_key'] = self.api_key
+        data['time'] = int(datetime.datetime.now().timestamp() * 1000)
+        param_string = f"time{data['time']}"        
+        data['sign'] = self.sign(self.api_key, self.secret_key, param_string)
+        
+        request_url = f"{self.url}/v1/account"
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+        return requests.post(request_url, data=data, headers =headers)
