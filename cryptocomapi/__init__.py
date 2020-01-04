@@ -104,17 +104,36 @@ class CryptoComApi():
         return [parse_obj(x) for x in data]
 
    
-    def sign(self, api_key, secret_key, param_string):
-        signature = f"api_key{api_key}{param_string}{secret_key}"  
-        return hashlib.sha256(signature.encode('ASCII')).hexdigest()
+    def sign(self, params: dict):
+        sign_str = ""
+        # sort params alphabetically and add to signing string
+        for param in sorted(params.keys()):
+            sign_str += param + str(params[param])
+        # at the end add the secret
+        sign_str += str(self.secret_key)
+        hash = hashlib.sha256(sign_str.encode()).hexdigest()
+        return hash
 
-    def get_account(self):        
+    def mandatory_post_params(self):
         data = dict()
         data['api_key'] = self.api_key
         data['time'] = int(datetime.datetime.now().timestamp() * 1000)
-        param_string = f"time{data['time']}"        
-        data['sign'] = self.sign(self.api_key, self.secret_key, param_string)
+        return data
+
+    def get_account(self):
+        data = self.mandatory_post_params()
+        data['sign'] = self.sign(data)
         
         request_url = f"{self.url}/v1/account"
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        return requests.post(request_url, data=data, headers =headers)
+        return requests.post(request_url, data=data, headers =headers).json()
+
+    def get_open_orders(self, symbol):
+        data = self.mandatory_post_params()
+        data['symbol'] = symbol
+        data['sign'] = self.sign(data)
+
+        request_url = f"{self.url}/v1/openOrders"
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+        return requests.post(request_url, data=data, headers =headers).json()
+        
