@@ -6,10 +6,11 @@ import hashlib
 import datetime
 
 class CryptoComApi():
-    def __init__(self, api_key="", secret_key=""):
+    def __init__(self, time_offset = 0, api_key="", secret_key=""):
         self.url = "https://api.crypto.com"
         self.api_key = api_key
         self.secret_key = secret_key
+        self.time_offset = time_offset
 
     def get_symbols(self):
         """ Queries all transaction pairs and precision supported by the system
@@ -117,7 +118,7 @@ class CryptoComApi():
     def mandatory_post_params(self):
         data = dict()
         data['api_key'] = self.api_key
-        data['time'] = int(datetime.datetime.now().timestamp() * 1000)
+        data['time'] = int(datetime.datetime.now().timestamp() * 1000) - self.time_offset
         return data
 
     def get_account(self):
@@ -126,14 +127,193 @@ class CryptoComApi():
         
         request_url = f"{self.url}/v1/account"
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        return requests.post(request_url, data=data, headers =headers).json()
+        return requests.post(request_url, data=data, headers =headers).json()['data']
 
-    def get_open_orders(self, symbol):
+    def get_all_orders(self, symbol, page = None, pageSize = None, startDate = None, endDate = None):  
+        """ Gets all orders of the user
+        Arguments:
+            symbol {string} -- Market mark e.g. bchbtc
+
+        Keyword Arguments:
+            page {int} -- Page number
+            pageSize {int} -- pageSize
+            startDate {string} -- Start time, accurate to seconds "yyyy-MM-dd mm:hh:ss"
+            endDate {string} -- End time, accurate to seconds "yyyy-MM-dd mm:hh:ss"
+
+        Returns:
+            {'count': int, 'resultList': list} -- Returns object with a result list and number of elements
+        """      
         data = self.mandatory_post_params()
         data['symbol'] = symbol
+        
+        if(page is not None):
+            data['page'] = page
+        if(pageSize is not None):
+            data['pageSize'] = pageSize
+        if(startDate is not None):
+            data['startDate'] = startDate
+        if(endDate is not None):
+            data['endDate'] = endDate
+
+        data['sign'] = self.sign(data)
+
+        request_url = f"{self.url}/v1/allOrders"
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+        return requests.post(request_url, data=data, headers =headers).json()['data']
+
+    def get_open_orders(self, symbol, page = None, pageSize = None):
+        """ Gets all open orders of the user
+        Arguments:
+            symbol {string} -- Market mark e.g. bchbtc
+
+        Keyword Arguments:
+            page {int} -- Page number
+            pageSize {int} -- pageSize
+
+        Returns:
+            {'count': int, 'resultList': list} -- Returns object with a result list and number of elements
+        """
+
+        data = self.mandatory_post_params()
+        data['symbol'] = symbol
+        
+        if(page is not None):
+            data['page'] = page
+        if(pageSize is not None):
+            data['pageSize'] = pageSize
+
         data['sign'] = self.sign(data)
 
         request_url = f"{self.url}/v1/openOrders"
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        return requests.post(request_url, data=data, headers =headers).json()
+        return requests.post(request_url, data=data, headers =headers).json()['data']
+
+
+    def get_trades(self, symbol, page = None, pageSize = None, startDate = None, endDate = None, sort = None):
+        """ Gets all trades of the user
+        Arguments:
+            symbol {string} -- Market mark e.g. bchbtc
+
+        Keyword Arguments:
+            page {int} -- Page number
+            pageSize {int} -- pageSize
+            startDate {string} -- Start time, accurate to seconds "yyyy-MM-dd mm:hh:ss"
+            endDate {string} -- End time, accurate to seconds "yyyy-MM-dd mm:hh:ss"
+            sort {int} -- 1 gives reverse order
+
+        Returns:
+            {'count': int, 'resultList': list} -- Returns object with a result list and number of elements
+        """
+
+        data = self.mandatory_post_params()
+        data['symbol'] = symbol
         
+        if(page is not None):
+            data['page'] = page
+        if(pageSize is not None):
+            data['pageSize'] = pageSize
+        if(startDate is not None):
+            data['startDate'] = startDate
+        if(endDate is not None):
+            data['endDate'] = endDate        
+        if(sort is not None):
+            data['sort'] = sort
+
+        data['sign'] = self.sign(data)
+
+        request_url = f"{self.url}/v1/openOrders"
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+        return requests.post(request_url, data=data, headers =headers).json()['data']
+    
+    def get_order(self, symbol, order_id):
+        """ Gets specific order of the user
+        Arguments:
+            symbol {string} -- Market mark e.g. bchbtc
+            order_id {string} -- Id of the bid, not the order
+
+
+        Returns:
+            object -- Contains data about the whole order
+        """
+
+        data = self.mandatory_post_params()
+        data['symbol'] = symbol
+        data['order_id'] = order_id
+       
+        data['sign'] = self.sign(data)
+
+        request_url = f"{self.url}/v1/showOrder"
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+        return requests.post(request_url, data=data, headers =headers).json()['data']
+    
+    def cancel_order(self, symbol, order_id):
+        """ Cancels specific order of the user
+        Arguments:
+            symbol {string} -- Market mark e.g. bchbtc
+            order_id {string} -- Id of the bid, not the order
+
+
+        Returns:
+            object -- Contains data about the whole order
+        """
+
+        data = self.mandatory_post_params()
+        data['symbol'] = symbol
+        data['order_id'] = order_id
+       
+        data['sign'] = self.sign(data)
+
+        request_url = f"{self.url}/v1/orders/cancel"
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+        return requests.post(request_url, data=data, headers =headers).json()['data']     
+    
+    def cancel_all_orders(self, symbol):
+        """ Cancels specific order of the user
+        Arguments:
+            symbol {string} -- Market mark e.g. bchbtc
+            order_id {string} -- Id of the bid, not the order
+
+
+        Returns:
+            object -- Contains data about the whole order
+        """
+
+        data = self.mandatory_post_params()
+        data['symbol'] = symbol
+       
+        data['sign'] = self.sign(data)
+
+        request_url = f"{self.url}/v1/cancelAllOrders"
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+        return requests.post(request_url, data=data, headers =headers).json()['data'] 
+
+    def order(self, symbol, side, type, volume, price = None, fee_is_user_exchange_coin = None):
+        """ Cancels specific order of the user
+        Arguments:
+            symbol {string} -- Market mark e.g. bchbtc
+            side {string} -- BUY, SELL
+            type {int} -- Type of list: 1 for limit order (user sets a price), 2 for market order (best available price)
+            volume {int} -- Purchase quantity (Polysemy, multiplexing fields) type=1 represents the quantity of sales and purchases type=2: buy means the total price, Selling represents the total number. Trading restrictions user/me-User information.
+        
+        Keyword Arguments:   
+            fee_is_user_exchange_coin {int} -- this parameter indicates whether to use the platform currency to pay the handling fee, 0 means no, 1 means yes. 0 when the exchange has the platform currency.
+            price {float} -- Authorized unit price. If type=2 then no need for this parameter.
+
+        Returns:
+            object -- Contains data about the whole order
+        """
+
+        data = self.mandatory_post_params()
+        data['symbol'] = symbol
+
+        if(price is not None):            
+            data['price'] = price
+
+        if(fee_is_user_exchange_coin is not None):
+            data['fee_is_user_exchange_coin'] = fee_is_user_exchange_coin
+
+        data['sign'] = self.sign(data)
+
+        request_url = f"{self.url}/v1/order"
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+        return requests.post(request_url, data=data, headers =headers).json()['data'] 
