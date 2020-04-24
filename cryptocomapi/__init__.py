@@ -118,7 +118,7 @@ class CryptoComApi():
     def mandatory_post_params(self):
         data = dict()
         data['api_key'] = self.api_key
-        data['time'] = int(datetime.datetime.now().timestamp() * 1000) - self.time_offset
+        data['time'] = int(datetime.datetime.now().timestamp() * 1000) - int(self.time_offset)
         return data
 
     def get_account(self):
@@ -287,13 +287,13 @@ class CryptoComApi():
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         return requests.post(request_url, data=data, headers =headers).json()['data'] 
 
-    def order(self, symbol, side, type, volume, price = None, fee_is_user_exchange_coin = None):
-        """ Cancels specific order of the user
+    def order(self, symbol, side, order_type=1, volume=0, price = None, fee_is_user_exchange_coin = 1):
+        """ Create a new order
         Arguments:
             symbol {string} -- Market mark e.g. bchbtc
             side {string} -- BUY, SELL
             type {int} -- Type of list: 1 for limit order (user sets a price), 2 for market order (best available price)
-            volume {int} -- Purchase quantity (Polysemy, multiplexing fields) type=1 represents the quantity of sales and purchases type=2: buy means the total price, Selling represents the total number. Trading restrictions user/me-User information.
+            volume {float} -- Purchase quantity (Polysemy, multiplexing fields) type=1 represents the quantity of sales and purchases type=2: buy means the total price, Selling represents the total number. Trading restrictions user/me-User information.
         
         Keyword Arguments:   
             fee_is_user_exchange_coin {int} -- this parameter indicates whether to use the platform currency to pay the handling fee, 0 means no, 1 means yes. 0 when the exchange has the platform currency.
@@ -304,10 +304,17 @@ class CryptoComApi():
         """
 
         data = self.mandatory_post_params()
-        data['symbol'] = symbol
 
         if(price is not None):            
             data['price'] = price
+        else:
+            return None
+
+        data['symbol'] = symbol
+        data['volume'] = volume
+        data['type'] = order_type
+        data['side'] = side
+
 
         if(fee_is_user_exchange_coin is not None):
             data['fee_is_user_exchange_coin'] = fee_is_user_exchange_coin
@@ -316,4 +323,5 @@ class CryptoComApi():
 
         request_url = f"{self.url}/v1/order"
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        return requests.post(request_url, data=data, headers =headers).json()['data'] 
+        result = requests.post(request_url, data=data, headers =headers).json()
+        return result['data'] 
